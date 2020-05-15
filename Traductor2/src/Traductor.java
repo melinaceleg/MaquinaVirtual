@@ -167,7 +167,7 @@ public class Traductor implements constantesDePrograma {
 	{
 		String subLinea = linea;
 		String dato;
-		subLinea = subLinea.replace("\\\\ASM", "");
+		subLinea = subLinea.replace("/^\\\\ASM/", "");
 		subLinea = subLinea.trim();
 		System.out.println("asmms" + subLinea);
 		subLinea = subLinea.replaceAll(" ", "");
@@ -307,14 +307,16 @@ public class Traductor implements constantesDePrograma {
 		datos[1] = datos[1].trim();
 		System.out.println("constante" + datos[0]);
 		System.out.println("valor" + datos[1]);
-		if (datos[1].matches("/\".*\"/")) 
+		if (datos[1].matches("\".*\"")) 
 		{/// es constante directa
+			datos[1] = datos[1].replaceAll("\"", "");
 			nuevaDirecta = new ConstanteDirecta(datos[0], datos[1]);
 			directas.add(nuevaDirecta);
 			System.out.println("constante directa:"+nuevaDirecta.getNombre());
 			System.out.println(nuevaDirecta.getValorDirecto());
 		}
 		else { ///es constante de un solo valor
+			System.out.println("aca entro");
 			nueva = new Constante(datos[0], tipoDato(datos[1]));
 			constantes.add(nueva);
 			System.out.println(nueva.getNombre());
@@ -361,7 +363,7 @@ public class Traductor implements constantesDePrograma {
 		String op2 = null;
 		int indiceMnem = -1;
 		System.out.println("2da pasada"+this.linea);
-		if (this.linea.matches("\\s\\bEQU\\b\\s")) { /// me fijo si es constante
+		if (this.linea.matches(".*\\s\\bEQU\\b\\s.*")) { /// me fijo si es constante
 			{
 				System.out.println("es const");
 			this.lecturaConstante(this.linea);
@@ -379,7 +381,7 @@ public class Traductor implements constantesDePrograma {
 					operandos = this.linea.split(",");
 					operandos[0] = operandos[0].trim();
 					operandos[1] = operandos[1].trim();				
-					if (operandos[0] != null && !operandos[0].matches("\\bCS\\b")) { ///el operando 1 no puede ser nulo ni contener a CS
+					if (operandos[0] != null && !operandos[0].matches(".*\\bCS\\b.*")) { ///el operando 1 no puede ser nulo ni contener a CS
 						op1= operandos[0];
 						op2= operandos[1];
 						System.out.println("op1"+operandos[0]);
@@ -388,7 +390,7 @@ public class Traductor implements constantesDePrograma {
 					}
 				} else {
 					op1 = this.linea.trim();
-					if (!op1.matches("\\bCS\\b"))
+					if (!op1.matches(".*\\bCS\\b.*"))
 					{
 					if (!"".equalsIgnoreCase(op1)) {
 						System.out.println("operando0:" + operandos[0]);
