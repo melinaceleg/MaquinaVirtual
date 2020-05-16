@@ -1,2 +1,7 @@
 MOV             AX     ,     BX                  
-HOLA EQU "COMO ESTAS"
+NULL EQU -1
+NULL EQU 8
+ROTULO: ADD BX,DX
+ROTULO: ADD AX, ROTULO
+ADD AX, [DS:AX+NULL]
+ROTULO:               MOV                                     
