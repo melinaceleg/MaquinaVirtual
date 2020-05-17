@@ -1,25 +1,30 @@
 import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.IOException;
 import java.text.ParseException;
 
+
 public class ESDatos {
 	String nomArch;
 	BufferedReader entrada;
+	DataOutputStream salida;
 	int cantLineas;
 	Traductor t;
 
-	public ESDatos(String nomArch) {
+	public ESDatos(String nomArchEntrada, String nomArchSalida) {
 		// TODO Auto-generated constructor stub
 		t = Traductor.getInstance();
-		this.nomArch = nomArch;
+		this.nomArch = nomArchEntrada;
 		try {
 			this.primerPasada();
 			this.segundaPasada();
 			if (t.isGeneraIMG()) 
-				generarIMG();
+				generarIMG(nomArchSalida);
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
+			System.out.println(e.getMessage()+"error en el archivo");
 		}
 	}
 
@@ -56,6 +61,8 @@ public class ESDatos {
 	public void segundaPasada() throws IOException {
 		String linea;
 		LineaInstruccion l = null;
+		String sep[];
+		String comentario = null;
 		int lineaAct=0;
 		this.abrirArchivo();
 		try {
@@ -64,19 +71,26 @@ public class ESDatos {
 			while (linea != null) {
 				linea = linea.trim();
 				if (!t.verificarLineaContar(linea)) {
-					if (linea.startsWith("////")) /// SOLO COMENTARIO
+					if (linea.startsWith("//")) /// SOLO COMENTARIO
 					{
-						linea = linea.replace("//", "");
+						linea = linea.replace("[//]+", "");
 					}
 				} else {
+					if (linea.contains("//"))
+					{
+						sep = linea.split("[//]+");
+						linea = sep[0];
+						linea = linea.trim();
+						comentario = sep[1];
+					}
 					t.setLineaOrg(linea);
 					t.setLinea(linea);
 					System.out.println("linea contada :" + linea);
 					l = t.cortarDatos();
 					if (l != null) {
+						lineaAct++;
 						t.imprimirLinea(l);
-						t.guardarEnMemoria(l);
-					lineaAct++;
+						t.guardarEnMemoria(l);			
 					t.setLineaActual(lineaAct);
 					}
 				}
@@ -86,17 +100,35 @@ public class ESDatos {
 			}
 			this.entrada.close();
 			t.generarMemoria();
+			//t.escribirEnMemoriaConstantesDirectas();
 
 		} catch (Exception e) {
-			System.out.println(e.getMessage());
+			System.out.println("excepcion"+e.getMessage());
 		}
 
 	}
 	
-	
-	public void generarIMG()
+	public void abrirSalida(String nomArchSalida) throws FileNotFoundException
 	{
-		///falta generar archivo de salida
+		this.salida = new DataOutputStream(new FileOutputStream(nomArchSalida));
+	}
+	
+	public void generarIMG(String nomArchSalida) throws FileNotFoundException
+	{
+		int[] memoria = t.getMemoria();
+		Registro [] registros = t.getRegistros();
+		this.abrirSalida(nomArchSalida);
+		try {
+			for (int i =0; i < registros.length; i++)
+				this.salida.write(registros[i].getValor());
+			for (int i = 0 ; i < memoria.length ; i++)
+				this.salida.write(memoria[i]);;
+				
+			this.salida.close();
+		} catch (IOException e) {
+			System.out.println(e.getMessage()+"Error en salida");
+			e.printStackTrace();
+		}
 		
 	}
 }

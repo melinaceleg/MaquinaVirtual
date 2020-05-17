@@ -9,7 +9,7 @@ public class Traductor implements constantesDePrograma {
 
 	private int cantConstantes;
 	private int lineaActual=0;
-
+	private boolean verifTipoDato;
 	private int cantLineas = 0;
 	private int celdasActuales=0;
 	private int espacioDATA;
@@ -29,6 +29,10 @@ public class Traductor implements constantesDePrograma {
 	private Registro[] registros = new Registro[16];
 	private String[] mnemonicos = new String[144];
 	private int[] memoria = new int[8192]; ///memoria total
+
+	public int[] getMemoria() {
+		return memoria;
+	}
 
 	public Registro[] getRegistros() {
 		return registros;
@@ -236,7 +240,9 @@ public class Traductor implements constantesDePrograma {
 	public void generarMemoria() ///cuando finaliza de leerse el archivo
 	{
 		this.espacioCODE = this.getCantLineas()*3;
-		int espacioCeldaDirectas= directas.get(directas.size()-1).getIndiceCelda() + directas.get(directas.size()-1).getValorDirecto().length();
+		int espacioCeldaDirectas=0;
+		if (directas.size()>0)
+		 espacioCeldaDirectas= directas.get(directas.size()-1).getIndiceCelda() + directas.get(directas.size()-1).getValorDirecto().length();
 		
 		registros[DS].setValor(this.getCantLineas()*3 + espacioCeldaDirectas);
 		if (this.getEspacioEXTRA() == -1)
@@ -257,7 +263,7 @@ public class Traductor implements constantesDePrograma {
 	{
 		boolean b = true;
 
-		if ((linea == null) || linea.startsWith("\\n") || linea.startsWith("\\\\ASM") || linea.startsWith("//"))
+		if ((linea == null) || linea.startsWith("\\n") || linea.startsWith("\\\\ASM") || linea.startsWith("//") || linea.equalsIgnoreCase(""))
 			b = false;
 
 		return b;
@@ -309,11 +315,14 @@ public class Traductor implements constantesDePrograma {
 	public String filtraRotulo(String linea)
 	{
 		String rotulo;
-		long cant = linea.chars().filter(ch -> ch == ':').count();
-		if (cant > 1 || (cant == 1 && !linea.contains("["))) {
+		//long cant = linea.chars().filter(ch -> ch == ':').count();
+		if (linea.matches("^[A-Z-a-z- *]+\t*\\:+.*")) {
+
+		//if (cant > 1 || (cant == 1 && !linea.contains("["))) {
 			rotulo =linea.substring(0,linea.indexOf(":")+1);
 			linea = linea.replace(rotulo,"");
 			linea=linea.trim();
+			System.out.println("con rotulo filtrado:"+linea);
 		}
 		return linea;
 	}
@@ -323,15 +332,15 @@ public class Traductor implements constantesDePrograma {
 		String subLinea;
 		Rotulo nuevo = null;
 		boolean esRep = true;
-		long cant = linea.chars().filter(ch -> ch == ':').count();
+		//long cant = linea.chars().filter(ch -> ch == ':').count();
 		// System.out.println("esto es" + linea);
-		if (cant > 1 || (cant == 1 && !linea.contains("["))) {
-
+		//if (cant > 1 || (cant == 1 && !linea.contains("["))) {
+			if (linea.matches("^[A-Z-a-z- *]+\t*\\:+.*")) {
 			subLinea = linea.substring(0, linea.indexOf(":"));
 			subLinea = subLinea.trim();
 			esRep = siEsRepetido(subLinea);
 			if (!esRep) {
-				nuevo = new Rotulo(subLinea, this.cantLineas);
+				nuevo = new Rotulo(subLinea, this.getCantLineas());
 				rotulos.add(nuevo);
 				System.out.println("rotulo:" + nuevo.getNombre());
 				System.out.println("linea:" + nuevo.getnLinea());
@@ -340,38 +349,51 @@ public class Traductor implements constantesDePrograma {
 			}
 		}
 	}
-
 	public int tipoDato(String dato) {
-		int valor = -1;
-		if (dato.startsWith("#")) {
+		int valor=0;
+		this.verifTipoDato=true;
+		if (dato.startsWith("#") ||  dato.matches("^[0-9]*") || (dato.startsWith("-"))) {
 			dato = dato.replace("#", "");
+			if (dato.startsWith("-"))
+			{
+				dato = dato.replace("-", "");
+				dato = dato.trim();
+				System.out.println(dato);
+				valor = (Integer.parseInt(dato)) * (-1);
+				System.out.println(String.format("%08x", valor));
+			}		
 			valor = Integer.parseInt(dato);
-		} else if (dato.startsWith("-")) /// es un numero decimal negativo
-		{
-			dato = dato.replace("-", "");
-			dato = dato.trim();
-			System.out.println(dato);
-			valor = (Integer.parseInt(dato)) * (-1);
-			System.out.println(String.format("%08x", valor));
 		} else if (dato.startsWith("%")) {
 			dato = dato.replace("%", "");
-			valor = Integer.parseInt(dato, 16);
+			if (dato.equalsIgnoreCase("FFFFFFFF"))
+				valor = -1;
+			else
+				valor = Integer.parseInt(dato, 16);
+			System.out.println("entro en hexa:"+dato);			
 		} else if (dato.startsWith("@")) {
 			dato = dato.replace("@", "");
 			valor = Integer.parseInt(dato, 8);
 		} else {
 			if (dato.charAt(0) == 0x0027) {
+				System.out.println("entre en ' ");
 				dato = dato.replace("'", "");
+				System.out.println(dato);
 				StringBuilder sb = new StringBuilder();
 				char[] caracteres = dato.toCharArray();
 				for (char c : caracteres) {
-					sb.append((byte) c);
+					sb.append((int) c);
 				}
 				valor = Integer.parseInt(sb.toString());
+			}
+			else
+			{
+				this.verifTipoDato = false;
 			}
 		}
 		return valor;
 	}
+
+
 
 	public int makeValorConstanteDirecta() /// construye el valor de la constante directa en memoria
 	{
@@ -380,7 +402,8 @@ public class Traductor implements constantesDePrograma {
 			indiceInicio = directas.get(directas.size() - 1).getIndiceCelda()
 					+ directas.get(directas.size() - 1).getValorDirecto().length();
 		else
-			indiceInicio = registros[CS].getValor();
+			indiceInicio = (this.getCantLineas()-1)*3+1;
+		
 		return indiceInicio;
 	}
 
@@ -400,7 +423,7 @@ public class Traductor implements constantesDePrograma {
 			datos[1] = datos[1].replaceAll("\"", "");
 			indexRepetido = devuelveConstanteDirecta(datos[0]);
 			if (indexRepetido == -1 && datos[0].length() >= 3 && datos[0].length() <= 10
-					&& datos[0].matches("^[A-Z-a-z].*") && !datos[0].matches("[^(A-Z-a-z-0-9)]")) {
+					&& datos[0].matches("^[A-Z-a-z].*") && datos[0].matches("[(A-Z-a-z-0-9)]+")) {
 				datos[1] = datos[1] + String.valueOf(this.tipoDato("%00000000"));
 				nuevaDirecta = new ConstanteDirecta(datos[0], datos[1]);
 				nuevaDirecta.setIndiceCelda(this.makeValorConstanteDirecta());
@@ -433,6 +456,7 @@ public class Traductor implements constantesDePrograma {
 				indice = i;
 			i++;
 		}
+		System.out.println("indice constante inmediata:"+indice);
 		return indice;
 	}
 
@@ -444,7 +468,7 @@ public class Traductor implements constantesDePrograma {
 				indice = i;
 			i++;
 		}
-
+		System.out.println("constante directa:"+indice);
 		return indice;
 	}
 
@@ -452,16 +476,17 @@ public class Traductor implements constantesDePrograma {
 		int i = 0x00;
 		int indiceMnem = -1;
 		while (i < mnemonicos.length && indiceMnem == -1) {
-			if (mnemonicos[i] != null && this.linea.startsWith(mnemonicos[i] + " ")) {
+			if (mnemonicos[i] != null && this.linea.matches("^\\b"+mnemonicos[i]+"\\b\\s*.*")) {
 				indiceMnem = i;
 			}
 			i++;
 		}
+		System.out.println("indicemnmen:"+indiceMnem);
 		return indiceMnem;
 	}
 
 	public void filtraMnemonico(int indiceMnem) {
-		this.linea = this.linea.replace(mnemonicos[indiceMnem], " ");
+		this.linea = this.linea.replace(mnemonicos[indiceMnem], "");
 		this.linea = this.linea.trim();
 		System.out.println("linea con el mnemonico reemplazado " + this.linea);
 	}
@@ -507,7 +532,7 @@ public class Traductor implements constantesDePrograma {
 				} else {
 					op1 = this.linea.trim();
 					if (!op1.matches(".*\\bCS\\b.*")) {
-						if (!"".equalsIgnoreCase(op1)) {
+						if (!"".equalsIgnoreCase(op1) && op1!=null) {
 							System.out.println("operando0:" + operandos[0]);
 							System.out.println("operando1:" + operandos[1]);
 						} else {
@@ -576,6 +601,24 @@ public class Traductor implements constantesDePrograma {
 		System.out.println(String.format("%08x", nueva.getOperando2()));
 		return nueva;
 	}
+	
+	public void escribirEnMemoriaConstantesDirectas()
+	{
+	  Iterator<ConstanteDirecta> it = directas.iterator();
+	  ConstanteDirecta c;
+	  int j=0;
+	  while (it.hasNext())
+	  {
+		  c=it.next();
+		  j=0;
+		  while (j < c.getValorDirecto().length())
+		  {
+			  this.memoria[c.getIndiceCelda()+j] = c.getValorDirecto().charAt(j);
+		  		j++;
+		  }
+	  }
+		
+	}
 
 	public int esRegistro(String dato) {
 		int i = 0;
@@ -593,8 +636,7 @@ public class Traductor implements constantesDePrograma {
 		int index;
 		Operando operando = null;
 		System.out.println("ENTRO EN OBTENER CODOP");
-		if (op != null) {
-			if (!("".equalsIgnoreCase(op))) {
+		if (op != null && !("".equalsIgnoreCase(op))) {
 				if (op.startsWith("[")) {
 					System.out.println("ES INDIRECTO O INDIRECTO");
 					operando = obtenerDIRECTOINDIRECTO(op);
@@ -612,39 +654,42 @@ public class Traductor implements constantesDePrograma {
 						System.out.println("index registro:" + index);
 						if (index != -1) { // es registro
 							tipo = 1;
-							operando = new Operando(index << 4, tipo);
+							operando = new Operando(index, tipo);
 						} else {
 							index = devuelveConstanteInmediata(op);
 							if (index != -1) /// es constante
 							{
+								System.out.println("Entro en constante inmediata");
 								tipo = 0;
 								operando = new Operando(constantes.get(index).getDato(), tipo);
 							} else {
+								System.out.println("paso sector constante directa");
 								index = devuelveConstanteDirecta(op);
 								if (index != -1) /// es constante directa
-								{
+								{ 
+									System.out.println("Entro en constante directa");
 									tipo = 0;
 									operando = new Operando(directas.get(index).getIndiceCelda(), tipo);
 								} else {
-									if (op.matches("[0-9]+")) {
 										tipo = 0;
+										System.out.println("paso sector tipo dato");
 										CODOP = tipoDato(op);
-										if (Integer.parseInt(op) == CODOP)
+											if (verifTipoDato)
+											{
+											System.out.println("Entro en valor inmediato");
 											operando = new Operando(CODOP, tipo);
-										else
+											}
+											else
 											System.out.println("dato invalido");
 									}
 								}
 							}
 						}
 					}
-				}
-
-			} else {
+				}else {
 				System.out.println("HOLA");
 				operando = new Operando(0, 0); /// operando sin parametros
 			}
-		}
 		return operando;
 	}
 
@@ -698,6 +743,7 @@ public class Traductor implements constantesDePrograma {
 //			dato = op.substring(0, op.indexOf(":"));
 			registroIZQ = esRegistro(registros[0]);
 			op = registros[1];
+			System.out.println("en operando d/i registroIZQ:"+registroIZQ+ "op:"+op);
 		} else
 			registroIZQ = -2; /// aviso que no hay registro base definido
 
@@ -722,18 +768,24 @@ public class Traductor implements constantesDePrograma {
 			/// CODOP sino -1
 		} else
 			registroDER = this.esRegistro(op);
-		indexCeldaDirecta = this.devuelveConstanteDirecta(registros[1]);
-		if (registroDER == -1 && indexCeldaDirecta == -1) // si no hay registro en la derecha ni constante DIRECTA ES
-															// DIRECTO
+		indexCeldaDirecta = this.devuelveConstanteDirecta(op);
+		if (registroDER == -1 && indexCeldaDirecta == -1) // si no hay registro en la derecha ni constante DIRECTA ES															// DIRECTO
 		{
-			System.out.println("directo:" + registroDER);
+			System.out.println("esdirecto:");
 			tipo = 2;
 			if (stringDerIndirecto == null) /// verificamos que no haya una suma asociada
 			{
-				indiceConstante = this.devuelveConstanteInmediata(op); /// posee constante
-				offset = constantes.get(indiceConstante).getDato();
+				indiceConstante = this.devuelveConstanteInmediata(op); /// posee constante inmediata?
+				if (indiceConstante != -1) ///es constante comun
+					offset = constantes.get(indiceConstante).getDato();
+				else {
+					offset=this.tipoDato(op);
+					if (!this.verifTipoDato)
+						registroIZQ=-1;
+				}
 				if (registroIZQ == -2) /// se omitio la base
 					registroIZQ = DS; /// por ser directo el DS es por defecto
+				System.out.println("escribe el directo:"+registroIZQ+" "+offset);
 			} else
 				registroIZQ = -1; /// anulo para que de error
 		} else { //// hay un registro a la derecha hablamos de operando indirecto
