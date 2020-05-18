@@ -6,16 +6,17 @@ import java.util.Iterator;
 public class Traductor implements constantesDePrograma {
 	private String linea;
 	private String lineaOrg;
-
 	private int cantConstantes;
 	private int lineaActual=0;
 	private boolean verifTipoDato;
 	private int cantLineas = 0;
 	private int celdasActuales=0;
-	private int espacioDATA;
-	private int espacioSTACK;
+	private int espacioDATA=500;
+	private int espacioSTACK=500;
 	private int espacioCODE;
-	private int espacioEXTRA;
+	private int espacioEXTRA=500;
+	private int espacioCONSTANTES=0;
+	private int espacioPROGRAMA=0;
 	private boolean generaIMG = true; /// por defecto, cambiara si una linea es es invalida
 
 
@@ -67,7 +68,7 @@ public class Traductor implements constantesDePrograma {
 		this.lineaActual = lineaActual;
 	}
 	private void iniciaCodigos() {
-
+		
 		mnemonicos[0x01] = "MOV";
 		mnemonicos[0x02] = "ADD";
 		mnemonicos[0x03] = "SUB";
@@ -115,18 +116,17 @@ public class Traductor implements constantesDePrograma {
 		registros[CS].setNombre("CS");
 		registros[CS].setValor(0);
 		registros[DS].setNombre("DS");
-		registros[DS].setValor(500);
+		registros[DS].setValor(0);
 		registros[ES].setNombre("ES");
 		registros[ES].setValor(500);
 		registros[IP].setNombre("IP");
-		registros[DS].setValor(0);
-		registros[AC].setNombre("AC");
 		registros[SS].setNombre("SS");
 		registros[SS].setValor(500);
 		registros[SP].setNombre("SP");
 		registros[SP].setValor(0);
 		registros[BP].setNombre("BP");
 		registros[BP].setValor(0);
+		registros[AC].setNombre("AC");
 		registros[AC].setValor(0);
 		registros[CC].setNombre("CC");
 		registros[CC].setValor(0);
@@ -223,11 +223,23 @@ public class Traductor implements constantesDePrograma {
 			espacioDATA = (Integer) NumberFormat.getInstance().parse(dato).intValue();
 			System.out.println("data" + espacioDATA);
 		}
-		if (subLinea.contains("EXTRA=")) {
+		if (subLinea.contains("EXTRA=")) {			
 			dato = subLinea.substring(subLinea.indexOf("EXTRA="));
 			dato = dato.replace("EXTRA=", "");
-			espacioEXTRA = (Integer) NumberFormat.getInstance().parse(dato).intValue();
-			System.out.println("extra" + espacioEXTRA);
+		//	dato = this.tipoDato(dato);
+			dato = dato.trim();
+			System.out.println(dato);
+			if (dato.charAt(0)=='-')
+			{	
+				System.out.println("si");
+				dato.replace("-", "");
+				dato=dato.trim();
+				espacioEXTRA = ((Integer)NumberFormat.getInstance().parse(dato).intValue());
+				System.out.println("extra" + espacioEXTRA);
+			}
+			else
+			espacioEXTRA=(Integer)NumberFormat.getInstance().parse(dato).intValue();
+			
 		}
 		if (subLinea.contains("STACK=")) {
 			dato = subLinea.substring(subLinea.indexOf("STACK="));
@@ -240,11 +252,11 @@ public class Traductor implements constantesDePrograma {
 	public void generarMemoria() ///cuando finaliza de leerse el archivo
 	{
 		this.espacioCODE = this.getCantLineas()*3;
-		int espacioCeldaDirectas=0;
-		if (directas.size()>0)
-		 espacioCeldaDirectas= directas.get(directas.size()-1).getIndiceCelda() + directas.get(directas.size()-1).getValorDirecto().length();
+//		if (directas.size()>0)
+		 //espacioCeldaDirectas= directas.get(directas.size()-1).getIndiceCelda() + directas.get(directas.size()-1).getValorDirecto().length();
 		
-		registros[DS].setValor(this.getCantLineas()*3 + espacioCeldaDirectas);
+		this.registros[DS].setValor(this.espacioCODE + this.espacioCONSTANTES);
+		System.out.println(this.getCantLineas());
 		if (this.getEspacioEXTRA() == -1)
 		{
 			registros[ES].setValor(this.getEspacioEXTRA());
@@ -252,11 +264,12 @@ public class Traductor implements constantesDePrograma {
 			registros[SP].setValor(this.getEspacioSTACK());
 			registros[PS].setValor(registros[DS].getValor() + this.getEspacioDATA() + this.getEspacioSTACK());
 		}
+		else {
 		registros[ES].setValor(this.registros[DS].getValor() + this.getEspacioDATA());
 		registros[SS].setValor(this.registros[ES].getValor() + this.getEspacioEXTRA());
 		registros[SP].setValor(this.espacioSTACK);
 		registros[PS].setValor(registros[DS].getValor() + this.getEspacioDATA() + this.getEspacioEXTRA() + this.getEspacioSTACK());
-		
+		}
 	}
 	
 	public boolean verificarLineaContar(String linea) // verifica si es una linea que se deba contar /CHEQUEADO/
@@ -316,7 +329,7 @@ public class Traductor implements constantesDePrograma {
 	{
 		String rotulo;
 		//long cant = linea.chars().filter(ch -> ch == ':').count();
-		if (linea.matches("^[A-Z-a-z- *]+\t*\\:+.*")) {
+		if (linea.matches("^[A-Z-a-z ]+[0-9]*\t*\\:+.*")) {
 
 		//if (cant > 1 || (cant == 1 && !linea.contains("["))) {
 			rotulo =linea.substring(0,linea.indexOf(":")+1);
@@ -335,7 +348,7 @@ public class Traductor implements constantesDePrograma {
 		//long cant = linea.chars().filter(ch -> ch == ':').count();
 		// System.out.println("esto es" + linea);
 		//if (cant > 1 || (cant == 1 && !linea.contains("["))) {
-			if (linea.matches("^[A-Z-a-z- *]+\t*\\:+.*")) {
+			if (linea.matches("^[A-Z-a-z ]+[0-9]*+\t*\\:+.*")) {
 			subLinea = linea.substring(0, linea.indexOf(":"));
 			subLinea = subLinea.trim();
 			esRep = siEsRepetido(subLinea);
@@ -387,7 +400,14 @@ public class Traductor implements constantesDePrograma {
 			}
 			else
 			{
-				this.verifTipoDato = false;
+				valor =this.devuelveConstanteDirecta(dato);
+				if (valor != -1)
+				{
+					valor = this.directas.get(valor).getIndiceCelda();
+					System.out.println("es constante directa");
+				}
+				else
+					this.verifTipoDato = false;
 			}
 		}
 		return valor;
@@ -402,7 +422,9 @@ public class Traductor implements constantesDePrograma {
 			indiceInicio = directas.get(directas.size() - 1).getIndiceCelda()
 					+ directas.get(directas.size() - 1).getValorDirecto().length();
 		else
-			indiceInicio = (this.getCantLineas()-1)*3+1;
+			indiceInicio = (this.getCantLineas())*3;
+		
+		System.out.println("indice constante:"+indiceInicio);
 		
 		return indiceInicio;
 	}
@@ -412,6 +434,7 @@ public class Traductor implements constantesDePrograma {
 		Constante nueva;
 		boolean noCUMPLE = true;
 		ConstanteDirecta nuevaDirecta;
+		char escape = '\0';
 		int indexRepetido = -1;
 		String[] datos = linea.split("\\sEQU\\s");
 		System.out.println("ENTRO en constante");
@@ -424,7 +447,7 @@ public class Traductor implements constantesDePrograma {
 			indexRepetido = devuelveConstanteDirecta(datos[0]);
 			if (indexRepetido == -1 && datos[0].length() >= 3 && datos[0].length() <= 10
 					&& datos[0].matches("^[A-Z-a-z].*") && datos[0].matches("[(A-Z-a-z-0-9)]+")) {
-				datos[1] = datos[1] + String.valueOf(this.tipoDato("%00000000"));
+				datos[1] = datos[1] + escape;
 				nuevaDirecta = new ConstanteDirecta(datos[0], datos[1]);
 				nuevaDirecta.setIndiceCelda(this.makeValorConstanteDirecta());
 				directas.add(nuevaDirecta);
@@ -540,7 +563,7 @@ public class Traductor implements constantesDePrograma {
 																			// parametro
 								op2 = "";
 						}
-						this.cantLineas++;
+						//this.cantLineas++;
 					}
 
 				}
@@ -605,6 +628,7 @@ public class Traductor implements constantesDePrograma {
 	public void escribirEnMemoriaConstantesDirectas()
 	{
 	  Iterator<ConstanteDirecta> it = directas.iterator();
+	  int tamConst=0;
 	  ConstanteDirecta c;
 	  int j=0;
 	  while (it.hasNext())
@@ -613,10 +637,15 @@ public class Traductor implements constantesDePrograma {
 		  j=0;
 		  while (j < c.getValorDirecto().length())
 		  {
-			  this.memoria[c.getIndiceCelda()+j] = c.getValorDirecto().charAt(j);
+			  this.memoria[c.getIndiceCelda()+j] = (int)c.getValorDirecto().charAt(j);
+			  System.out.println("constante:"+String.format("%08X",this.memoria[c.getIndiceCelda()+j]));
 		  		j++;
+		  		
 		  }
+		  System.out.println("cant letras"+j);
+		  tamConst+=c.getValorDirecto().length();
 	  }
+	  this.espacioCONSTANTES=tamConst;
 		
 	}
 
@@ -662,15 +691,17 @@ public class Traductor implements constantesDePrograma {
 								System.out.println("Entro en constante inmediata");
 								tipo = 0;
 								operando = new Operando(constantes.get(index).getDato(), tipo);
-							} else {
-								System.out.println("paso sector constante directa");
-								index = devuelveConstanteDirecta(op);
-								if (index != -1) /// es constante directa
-								{ 
-									System.out.println("Entro en constante directa");
-									tipo = 0;
-									operando = new Operando(directas.get(index).getIndiceCelda(), tipo);
-								} else {
+						} 
+//								else {
+//								System.out.println("paso sector constante directa");
+//								index = devuelveConstanteDirecta(op);
+//								if (index != -1) /// es constante directa
+//								{ 
+//									System.out.println("Entro en constante directa");
+//									tipo = 0;
+//									operando = new Operando(directas.get(index).getIndiceCelda(), tipo);
+//								} 
+								else {
 										tipo = 0;
 										System.out.println("paso sector tipo dato");
 										CODOP = tipoDato(op);
@@ -686,7 +717,7 @@ public class Traductor implements constantesDePrograma {
 							}
 						}
 					}
-				}else {
+				else {
 				System.out.println("HOLA");
 				operando = new Operando(0, 0); /// operando sin parametros
 			}
@@ -768,13 +799,24 @@ public class Traductor implements constantesDePrograma {
 			/// CODOP sino -1
 		} else
 			registroDER = this.esRegistro(op);
+		
 		indexCeldaDirecta = this.devuelveConstanteDirecta(op);
-		if (registroDER == -1 && indexCeldaDirecta == -1) // si no hay registro en la derecha ni constante DIRECTA ES															// DIRECTO
+		if (registroDER == -1) // si no hay registro en la derecha 	es DIRECTO													// DIRECTO
 		{
 			System.out.println("esdirecto:");
 			tipo = 2;
 			if (stringDerIndirecto == null) /// verificamos que no haya una suma asociada
 			{
+				if (indexCeldaDirecta != -1) /// si es constante directa
+				{
+					registroDER = this.directas.get(indexCeldaDirecta).getIndiceCelda();
+					if (registroIZQ == -2)
+						registroIZQ = CS;
+
+					offset = registroDER;
+				}
+				else
+				{
 				indiceConstante = this.devuelveConstanteInmediata(op); /// posee constante inmediata?
 				if (indiceConstante != -1) ///es constante comun
 					offset = constantes.get(indiceConstante).getDato();
@@ -784,20 +826,27 @@ public class Traductor implements constantesDePrograma {
 						registroIZQ=-1;
 				}
 				if (registroIZQ == -2) /// se omitio la base
-					registroIZQ = DS; /// por ser directo el DS es por defecto
+				
+						registroIZQ = DS; /// por ser directo el DS es por defecto
+			    else
+					registroIZQ = -1; /// anulo para que de error
 				System.out.println("escribe el directo:"+registroIZQ+" "+offset);
-			} else
-				registroIZQ = -1; /// anulo para que de error
-		} else { //// hay un registro a la derecha hablamos de operando indirecto
+				}
+			
+		
+		} 
+			else
+				registroIZQ=-1;
+		}else { //// hay un registro a la derecha hablamos de operando indirecto
 			tipo = 3;
-			if (indexCeldaDirecta != -1) /// si es constante directa
-			{
-				registroDER = indexCeldaDirecta;
-				if (registroIZQ == -2)
-					registroIZQ = CS;
+//			if (indexCeldaDirecta != -1) /// si es constante directa
+//			{
+//				registroDER = indexCeldaDirecta;
+//				if (registroIZQ == -2)
+//					registroIZQ = CS;
 
-				offset = registroDER;
-			} else {
+//				offset = registroDER;
+//			} else {
 				if (registroIZQ == -2) /// se habia omitido la base en el acceso
 				{
 					registroIZQ = buscaCoincidenteBase(registroDER);
@@ -807,7 +856,7 @@ public class Traductor implements constantesDePrograma {
 				{
 					if (stringDerIndirecto != null) /// hay operacion
 					{
-						if (stringDerIndirecto.matches("^[A-Z-a-z].*")) {
+						if (stringDerIndirecto.matches("^[A-Z-a-z]+.*")) {
 							indiceConstante = this.devuelveConstanteInmediata(stringDerIndirecto);
 							if (indiceConstante != -1) {
 								if (seSuma == 1)
@@ -837,7 +886,7 @@ public class Traductor implements constantesDePrograma {
 				} else
 					registroIZQ = -1;
 			}
-		}
+//		}
 		if (registroIZQ != -1) {
 			System.out.println("registroizq" + registroIZQ);
 			offset = offset & 0x0FFFFFFF;
