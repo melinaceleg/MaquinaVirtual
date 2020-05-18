@@ -485,7 +485,7 @@ void MostrarDireccion(int base, int numero, int espacio, int cantDigitos)
 //MOSTRAR CODIGO ASSEMBLER
 void MostrarArgumento(int primerArgumento, int tOper, int oper)
 {
-    char argumento[20];
+    char argumento[25];
     switch (tOper)
     {
     case 0: //INMEDIATO
@@ -501,14 +501,16 @@ void MostrarArgumento(int primerArgumento, int tOper, int oper)
         snprintf(argumento, sizeof(argumento),"[%s:%s", getNombreDelRegistro((oper&0xf0000000)>>28), getNombreDelRegistro(oper&0x0000000f));
         if ((oper&0x0ffffff0)>>4 != 0)
         {
-            snprintf(argumento, sizeof(argumento), "%s+%d", argumento,(oper&0x0ffffff0)>>4);
+            if ((oper & 0x0f000000) == 0)
+                snprintf(argumento, sizeof(argumento), "%s%c", argumento, '+');
+            snprintf(argumento, sizeof(argumento), "%s%d", argumento, (oper << 4) >> 8);
         }
         snprintf(argumento, sizeof(argumento), "%s]", argumento);
 
         break;
     }
     if (!primerArgumento)
-        printf("%8s", argumento);
+        printf("%11s", argumento);
     else
         printf(", %s", argumento);
 }
@@ -558,16 +560,16 @@ void MostrarCodigoAssembler(TMemoria memoria, int marcar)
         MostrarDireccion(10, i, 8, 4);
 
         //MUESTRA CODIDGO DE INSTRUCCION
-        printf("%04x ", codInstruccion >> 16);
+        printf("%04X ", codInstruccion >> 16);
         //MUESTRA TIPOS DE OPERANDOS
-        printf("%04x ", codInstruccion & 0x0000ffff);
+        printf("%04X ", codInstruccion & 0x0000ffff);
 
         //MUESTRA LOS OPERANDOS
-        printf("%04x ", oper1 >> 16);
-        printf("%04x ", oper1 & 0x0000ffff);
+        printf("%04X ", oper1 >> 16);
+        printf("%04X ", oper1 & 0x0000ffff);
 
-        printf("%04x ", oper2 >> 16);
-        printf("%04x ", oper2 & 0x0000ffff);
+        printf("%04X ", (oper2>>16)&0x0000ffff);
+        printf("%04X ", oper2 & 0x0000ffff);
 
         printf("\t%3d: ", getLinea(i - memoria.REG[CS]));
 
@@ -745,42 +747,42 @@ char *getNombreDelRegistro(int i)
 //CARGA LOS STRINGS DE LOS MNEMONICOS PARA MOSTRARLOS POR PANTALLA
 void CargarStringMnemonicos(char *StringMmemonicos[])
 {
-    StringMmemonicos[0x1] = "MOV";
-    StringMmemonicos[0x2] = "ADD";
-    StringMmemonicos[0x3] = "SUB";
-    StringMmemonicos[0x4] = "MUL";
-    StringMmemonicos[0x5] = "DIV";
-    StringMmemonicos[0x6] = "MOD";
-    StringMmemonicos[0x13] = "CMP";
+    StringMmemonicos[0x1]  = "MOV ";
+    StringMmemonicos[0x2]  = "ADD ";
+    StringMmemonicos[0x3]  = "SUB ";
+    StringMmemonicos[0x4]  = "MUL ";
+    StringMmemonicos[0x5]  = "DIV ";
+    StringMmemonicos[0x6]  = "MOD ";
+    StringMmemonicos[0x13] = "CMP ";
     StringMmemonicos[0x17] = "SWAP";
-    StringMmemonicos[0x19] = "RND";
-    StringMmemonicos[0x31] = "AND";
-    StringMmemonicos[0x32] = "OR";
-    StringMmemonicos[0x33] = "NOT";
-    StringMmemonicos[0x34] = "XOR";
-    StringMmemonicos[0x37] = "SHL";
-    StringMmemonicos[0x38] = "SHR";
-    StringMmemonicos[0x20] = "JMP";
-    StringMmemonicos[0x21] = "JE";
-    StringMmemonicos[0x22] = "JG";
-    StringMmemonicos[0x23] = "JL";
-    StringMmemonicos[0x24] = "JZ";
-    StringMmemonicos[0x25] = "JP";
-    StringMmemonicos[0x26] = "JN";
-    StringMmemonicos[0x27] = "JNZ";
-    StringMmemonicos[0x28] = "JNP";
-    StringMmemonicos[0x29] = "JNN";
+    StringMmemonicos[0x19] = "RND ";
+    StringMmemonicos[0x31] = "AND ";
+    StringMmemonicos[0x32] = "OR  ";
+    StringMmemonicos[0x33] = "NOT ";
+    StringMmemonicos[0x34] = "XOR ";
+    StringMmemonicos[0x37] = "SHL ";
+    StringMmemonicos[0x38] = "SHR ";
+    StringMmemonicos[0x20] = "JMP ";
+    StringMmemonicos[0x21] = "JE  ";
+    StringMmemonicos[0x22] = "JG  ";
+    StringMmemonicos[0x23] = "JL  ";
+    StringMmemonicos[0x24] = "JZ  ";
+    StringMmemonicos[0x25] = "JP  ";
+    StringMmemonicos[0x26] = "JN  ";
+    StringMmemonicos[0x27] = "JNZ ";
+    StringMmemonicos[0x28] = "JNP ";
+    StringMmemonicos[0x29] = "JNN ";
 
     StringMmemonicos[0x40] = "CALL";
     StringMmemonicos[0x44] = "PUSH";
-    StringMmemonicos[0x45] = "POP";
-    StringMmemonicos[0x48] = "RET";
+    StringMmemonicos[0x45] = "POP ";
+    StringMmemonicos[0x48] = "RET ";
 
     StringMmemonicos[0x50] = "SLEN";
     StringMmemonicos[0x51] = "SMOV";
     StringMmemonicos[0x53] = "SCMP";
 
-    StringMmemonicos[0x81] = "SYS";
+    StringMmemonicos[0x81] = "SYS ";
     StringMmemonicos[0x8f] = "STOP";
 }
 //CARGA EL VECTOR DE FUNCIONES
@@ -1047,7 +1049,10 @@ int func_PUSH(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
     int error = 0;
     if (memoria->REG[SP] > 0)
-        memoria->RAM[--memoria->REG[SP]] = (*arg1);
+    {
+        --memoria->REG[SP];
+        memoria->RAM[memoria->REG[SS] + memoria->REG[SP]] = (*arg1);
+    }
     else
         error = ERROR_STACK_OVERFLOW; // Stack overflow
 
@@ -1057,16 +1062,18 @@ int func_POP(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
     int error = 0;
     if (memoria->REG[SS] + memoria->REG[SP] < memoria->REG[CS] + memoria->REG[PS])
-        (*arg1) = memoria->RAM[memoria->REG[SP]++];
+    {
+        (*arg1) = memoria->RAM[memoria->REG[SS] + memoria->REG[SP]];
+        memoria->REG[SP]++;
+    }
     else
         error = ERROR_STACK_UNDERFLOW; // Stack underflow
     return error;
 }
 int func_CALL(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
-    int error;
-    (*arg1) = getIP(*memoria);
-    error = func_PUSH(memoria, flags, arg1, arg2);
+    int error, aux = memoria->REG[IP];
+    error = func_PUSH(memoria, flags, &aux, arg2);
     if (error == 0)
         setIP(memoria, NumeroSaltoMemoria(*arg1));
 
@@ -1076,7 +1083,7 @@ int func_RET(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
     int error = func_POP(memoria, flags, arg1 , arg2);
     if (error == 0)
-        setIP(memoria, NumeroSaltoMemoria(*arg1));
+        setIP(memoria, (*arg1));
 
     return error;
 }
@@ -1111,7 +1118,7 @@ int func_SCMP(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
         i++;
         resultado = memoria->RAM[(*arg1) + i] - memoria->RAM[(*arg2) + i];
     }
-    while (resultado == 0 && memoria->RAM[(*arg2) + i] != '\0');
+    while (resultado == 0 && memoria->RAM[(*arg1) + i] != '\0' && memoria->RAM[(*arg2) + i] != '\0');
 
     ModificarCC(memoria, resultado);
 
@@ -1204,7 +1211,7 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
                     }
 
                     if ((configuracion & 0x0008) == 0x0008)
-                        printf("%%%x ", memoria->RAM[direccion + i]);
+                        printf("%%%X ", memoria->RAM[direccion + i]);
                     if ((configuracion & 0x0004) == 0x0004)
                         printf("@%o ", memoria->RAM[direccion + i]);
                     if ((configuracion & 0x0001) == 0x0001)
@@ -1225,7 +1232,7 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
                             printf("%c ", memoria->REG[i]);
 
                         if ((configuracion & 0x0008) == 0x0008)
-                            printf("%%%04x ", memoria->REG[i]);
+                            printf("%%%04X ", memoria->REG[i]);
                         if ((configuracion & 0x0004) == 0x0004)
                             printf("@%04o ", memoria->REG[i]);
                         if ((configuracion & 0x0001) == 0x0001)
@@ -1249,8 +1256,11 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
                 fflush(stdin);
                 gets(cadena);
 
-                while (cadena[i] != '\0')
-                    memoria->RAM[direccion] = cadena[i++];
+                for (i = 0; i < strlen(cadena); i++)
+                {
+                    memoria->RAM[direccion + i] = (int)cadena[i];
+                }
+                memoria->RAM[direccion + i] = '\0';
             }
             break;
         case 20:
