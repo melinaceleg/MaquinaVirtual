@@ -263,15 +263,6 @@ void CargarImagen(TMemoria *memoria, char *url)
     int i = 0;
     if (imgFile)
     {
-        //fseek(imgFile, 0, SEEK_SET);
-        /*for (i = 0; i < 16; i++)
-            memoria->REG[i] = Read(imgFile);
-
-        i = 0;
-
-        while (!feof(imgFile))
-            memoria->RAM[i++] = Read(imgFile);*/
-
         fread(memoria->REG, sizeof(int), 16, imgFile);
 
         while (!feof(imgFile))
@@ -393,7 +384,7 @@ void MostrarFlagsB(TFlags flags, TMemoria memoria)
                 direccion[1] = (cant == 1)? 1: (direccion[1] - direccion[0] + 1);
                 for (i = 0; i < direccion[1]; i++)
                 {
-                    contenido = memoria.RAM[direccion[0] + i + memoria.REG[DS]];
+                    contenido = memoria.RAM[direccion[0] + i];
                     printf("\n[%04d]: ", (direccion[0] + i));
                     MostrarConEspacio(16, contenido, 4, 8);
                     printf(" %c %010d", getASCII(contenido), contenido);
@@ -712,7 +703,7 @@ void setIP(TMemoria *memoria, int ip)
 char getASCII(int num)
 {
     char caracter = num;
-    if (num <= 0 || num > 255)
+    if (num < 0 || num > 255)
         caracter = '.';
     return caracter;
 }
@@ -1082,6 +1073,7 @@ int func_CALL(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 int func_RET(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
     int error = func_POP(memoria, flags, arg1 , arg2);
+    (*arg1)+=3;
     if (error == 0)
         setIP(memoria, (*arg1));
 
@@ -1093,7 +1085,7 @@ int func_RET(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 int func_SLEN(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
     int i = 0;
-    while (memoria->RAM[memoria->REG[CS] + (*arg2) + i] != '\0')
+    while (memoria->RAM[(*arg2) + i] != '\0')
         i++;
     (*arg1) = i;
 
