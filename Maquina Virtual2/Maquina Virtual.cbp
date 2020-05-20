@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="oper.img -d -a -b -c" />
+				<Option parameters="9.img -a -b" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>

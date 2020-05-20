@@ -5,7 +5,7 @@
 #include <math.h>
 #include <time.h>
 
-#define PS 0 //TAMAÑANO DE PARTICION
+#define PS 0
 
 #define CS 1
 #define DS 2
@@ -111,6 +111,7 @@ void MostrarArgumento(int primerArgumento, int tOper, int oper);
 int MnemonicoCantArgumentos(int codMnemonico);
 void CargarStringMnemonicos(char *StringMmemonicos[]);
 void MostrarCodigoAssembler(TMemoria memoria, int marcar);
+void MostrarErrores(int error);
 
 int InterpretarInstruccion(int celda);
 void ObtenerInstruccion(TMemoria memoria, int i, int *codInstruccion, int *codOperando1, int *codOperando2);
@@ -234,28 +235,7 @@ void LeerEntrada(TEntrada *entrada, TFlags *flags, int arge, char *arg[])
         }
     }
 }
-/*unsigned int swapHexa(unsigned int x)
-{
-    unsigned int num = 0, i;
-    for (i = 0; i < 8; i++)
-    {
-        num |= (x&0xf)<<((7-i)*4);
-        x >>= 4;
-    }
-    return num;
-}
 
-int Read(FILE *imgFile, )
-{
-    int numero;
-    fread(memoria->REG, sizeof(int), 16, imgFile);
-    //numero = 0x0d700000;
-    numero = 0x1d7efa23;
-    printf("%08x\n", numero);
-    numero = swapNibbles(numero);
-    printf("%08x\n", numero);
-    return numero;
-}*/
 //CARGA LA IMAGEN DEL ARCHIVO
 void CargarImagen(TMemoria *memoria, char *url)
 {
@@ -345,10 +325,10 @@ void MostrarFlagsA(TFlags flags, TMemoria memoria)
         for (i = 0; i < memoria.RAM[1]; i++)
         {
             printf("\n\nProceso %d", i);
-            printf("\nPS = %010d | CS = %010d | DS = %010d | ES = %010d |", memoria.RAM[pos + PS], memoria.RAM[pos + CS], memoria.RAM[pos + DS], memoria.RAM[pos + ES]);
-            printf("\nIP = %010d | SS = %010d | SP = %010d | BP = %010d |", memoria.RAM[pos + IP], memoria.RAM[pos + SS], memoria.RAM[pos + SP], memoria.RAM[pos + BP]);
-            printf("\nAC = %010d | CC = %010d | AX = %010d | BX = %010d |", memoria.RAM[pos + AC], memoria.RAM[pos + CC], memoria.RAM[pos + AX], memoria.RAM[pos + BX]);
-            printf("\nCX = %010d | DX = %010d | EX = %010d | FX = %010d |", memoria.RAM[pos + CX], memoria.RAM[pos + DX], memoria.RAM[pos + EX], memoria.RAM[pos + FX]);
+            printf("\nPS = %10d | CS = %10d | DS = %10d | ES = %10d |", memoria.RAM[pos + PS], memoria.RAM[pos + CS], memoria.RAM[pos + DS], memoria.RAM[pos + ES]);
+            printf("\nIP = %10d | SS = %10d | SP = %10d | BP = %10d |", memoria.RAM[pos + IP], memoria.RAM[pos + SS], memoria.RAM[pos + SP], memoria.RAM[pos + BP]);
+            printf("\nAC = %10d | CC = %10d | AX = %10d | BX = %10d |", memoria.RAM[pos + AC], memoria.RAM[pos + CC], memoria.RAM[pos + AX], memoria.RAM[pos + BX]);
+            printf("\nCX = %10d | DX = %10d | EX = %10d | FX = %10d |", memoria.RAM[pos + CX], memoria.RAM[pos + DX], memoria.RAM[pos + EX], memoria.RAM[pos + FX]);
 
             pos += TAM_REG;
         }
@@ -387,7 +367,7 @@ void MostrarFlagsB(TFlags flags, TMemoria memoria)
                     contenido = memoria.RAM[direccion[0] + i];
                     printf("\n[%04d]: ", (direccion[0] + i));
                     MostrarConEspacio(16, contenido, 4, 8);
-                    printf(" %c %010d", getASCII(contenido), contenido);
+                    printf(" %c %3d", getASCII(contenido), contenido);
                 }
             }
         }while (strlen(cadena) > 0);
@@ -547,8 +527,7 @@ void MostrarCodigoAssembler(TMemoria memoria, int marcar)
         else
             printf(" ");
 
-        //MostrarDireccion(16, i, 4, 8);
-        MostrarDireccion(10, i, 8, 4);
+        MostrarDireccion(16, i, 4, 8);
 
         //MUESTRA CODIDGO DE INSTRUCCION
         printf("%04X ", codInstruccion >> 16);
@@ -615,41 +594,28 @@ void ObtenerOperandos(TMemoria memoria, int Instancia, int *tOper1, int *Oper1, 
 //LOS GUARDA EN DONDE CORRESPONDA (RAM O REGISTRO)
 int EjecutarInstruccion(TMemoria *memoria, T_FUNC* mnemonicos, TFlags flags, int tMnemonico, int tOper1, int Oper1, int tOper2, int Oper2)
 {
-    int arg1, arg2, auxIP = getIP(*memoria), error;
+    int *arg1, *arg2, auxIP = getIP(*memoria), error;
 
     switch (tOper1)
     {
-        case 0: arg1 = Oper1; break; //INMEDIATO
-        case 1: arg1 = memoria->REG[Oper1]; break; //REGISTRO
-        case 2: case 3: arg1 = memoria->RAM[Oper1]; //DIRECTO y INDIRECTO
+        case 0: arg1 = &Oper1; break; //INMEDIATO
+        case 1: arg1 = &memoria->REG[Oper1]; break; //REGISTRO
+        case 2: arg1 = &memoria->RAM[Oper1]; break;
+        case 3: arg1 = &memoria->RAM[Oper1];
     }
     switch (tOper2)
     {
-        case 0: arg2 = Oper2; break;
-        case 1: arg2 = memoria->REG[Oper2]; break;
-        case 2: case 3: arg2 = memoria->RAM[Oper2]; //DIRECTO y INDIRECTO
+        case 0: arg2 = &Oper2; break;
+        case 1: arg2 = &memoria->REG[Oper2]; break;
+        case 2: arg2 = &memoria->RAM[Oper2]; break; //DIRECTO y INDIRECTO
+        case 3: arg2 = &memoria->RAM[Oper2];
     }
 
-    error = mnemonicos[tMnemonico](memoria, flags, &arg1, &arg2);
+    error = mnemonicos[tMnemonico](memoria, flags, arg1, arg2);
 
-    if (error == 0)
+    if (error == 0 && auxIP == getIP(*memoria))
     {
-        if (auxIP == getIP(*memoria))
-            memoria->REG[IP]+=3;
-
-        switch (tOper1)
-        {
-            case 1: memoria->REG[Oper1] = arg1; break;
-            case 2: case 3: memoria->RAM[Oper1] = arg1;
-        }
-        if (tMnemonico == 0x17) //SWAP
-        {
-            switch (tOper2)
-            {
-                case 1: memoria->REG[Oper2] = arg2; break;
-                case 2: case 3: memoria->RAM[Oper2] = arg2;
-            }
-        }
+        memoria->REG[IP]+=3;
     }
     return error;
 }
@@ -670,6 +636,14 @@ int EjecutarPrograma(TMemoria *memoria, T_FUNC mnemonicos[TAM_MEMONICOS], TFlags
 
     return error;
 }
+void MostrarErrores(int error)
+{
+    switch (error)
+    {
+        case ERROR_STACK_OVERFLOW : printf("STACK OVERFLOW!"); break;
+        case ERROR_STACK_UNDERFLOW: printf("STACK UNDERFLOW!"); break;
+    }
+}
 void EjecutarMemoria(TMemoria *memoria, TFlags flags)
 {
     int error = 0;
@@ -687,7 +661,7 @@ void EjecutarMemoria(TMemoria *memoria, TFlags flags)
         memoria->RAM[1]++;
         printf("\n");
     }
-
+    MostrarErrores(error);
     MostrarFlagsA(flags, *memoria);
 }
 
@@ -703,7 +677,7 @@ void setIP(TMemoria *memoria, int ip)
 char getASCII(int num)
 {
     char caracter = num;
-    if (num < 0 || num > 255)
+    if (num < 32 || num >= 255)
         caracter = '.';
     return caracter;
 }
@@ -1085,32 +1059,36 @@ int func_RET(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 int func_SLEN(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
     int i = 0;
-    while (memoria->RAM[(*arg2) + i] != '\0')
+    while ((*arg2) != '\0')
+    {
         i++;
+        arg2++;
+    }
     (*arg1) = i;
 
     return 0;
 }
 int func_SMOV(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
-    int i = 0;
-    while (memoria->RAM[(*arg2) + i] != '\0')
+    while ((*arg2) != '\0')
     {
-        memoria->RAM[(*arg1) + i] = memoria->RAM[(*arg2) + i];
-        i++;
+        (*arg1) = (*arg2);
+        arg1++;
+        arg2++;
     }
 
     return 0;
 }
 int func_SCMP(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
-    int i = -1, resultado;
+    int resultado;
     do
     {
-        i++;
-        resultado = memoria->RAM[(*arg1) + i] - memoria->RAM[(*arg2) + i];
+        resultado = (*arg1) - (*arg2);
+        arg1++;
+        arg2++;
     }
-    while (resultado == 0 && memoria->RAM[(*arg1) + i] != '\0' && memoria->RAM[(*arg2) + i] != '\0');
+    while (resultado == 0 && (*arg1) != '\0' && (*arg2) != '\0');
 
     ModificarCC(memoria, resultado);
 
@@ -1121,7 +1099,7 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
     char cadena[50];
     int configuracion = memoria->REG[AX], prompt = 0, endline = 0, caracter = 0, direccion, espacio = 0, i;
 
-    switch ((int)(*arg1))
+    switch ((*arg1))
     {
         case 0:
             {
@@ -1221,7 +1199,7 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
                             printf("[%s]: ", getNombreDelRegistro(i));
 
                         if (caracter)
-                            printf("%c ", memoria->REG[i]);
+                            printf("%c ", getASCII(memoria->REG[i]));
 
                         if ((configuracion & 0x0008) == 0x0008)
                             printf("%%%04X ", memoria->REG[i]);
@@ -1277,14 +1255,12 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
                 i = 0;
                 while (memoria->RAM[direccion + i] != '\0')
                 {
-                     printf("%c", memoria->RAM[direccion + i]);
-                     if (endline)
-                     {
-                        printf("\n");
-                        MostrarDireccion((endline)? 16:10, memoria->REG[DX], -1, 4);
-                     }
+                     printf("%c", getASCII(memoria->RAM[direccion + i]));
                      i++;
                 }
+
+                if (endline)
+                    printf("\n");
             }
             break;
     }
