@@ -659,7 +659,8 @@ void EjecutarMemoria(TMemoria *memoria, TFlags flags)
         error = EjecutarPrograma(memoria, mnemonicos, flags);
         CopiarRegistros(memoria->RAM, 2 + TAM_REG * memoria->RAM[1], memoria->REG, 0);
 
-        memoria->RAM[1]++;
+        if (error == 0)
+            memoria->RAM[1]++;
         printf("\n");
     }
     MostrarErrores(error);
