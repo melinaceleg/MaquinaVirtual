@@ -527,7 +527,8 @@ void MostrarCodigoAssembler(TMemoria memoria, int marcar)
         else
             printf(" ");
 
-        MostrarDireccion(16, i, 4, 8);
+        //MostrarDireccion(16, i, 4, 8);
+        MostrarDireccion(10, i, 8, 4);
 
         //MUESTRA CODIDGO DE INSTRUCCION
         printf("%04X ", codInstruccion >> 16);
@@ -1215,7 +1216,7 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
         break;
         case 10:
             {
-                direccion = memoria->REG[DX] + (memoria->REG[BX] == 2)? memoria->REG[DS]: memoria->REG[ES];
+                direccion = memoria->REG[DX] + memoria->REG[memoria->REG[BX]];
 
                 if ((configuracion & 0xf000) == 0x0000)
                     prompt = 1;
@@ -1235,13 +1236,7 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
             break;
         case 20:
             {
-                direccion = memoria->REG[DX];
-                switch (memoria->REG[BX])
-                {
-                    case 1: direccion+= memoria->REG[CS]; break;
-                    case 2: direccion+= memoria->REG[DS]; break;
-                    case 3: direccion+= memoria->REG[ES]; break;
-                }
+                direccion = memoria->REG[DX] + memoria->REG[memoria->REG[BX]];
 
                 if ((configuracion & 0xf000) == 0x0000)
                     prompt = 1;
@@ -1250,7 +1245,7 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
                     endline = 1;
 
                 if (prompt)
-                    MostrarDireccion((endline)? 16:10, memoria->REG[DX], -1, 4);
+                    MostrarDireccion(10, memoria->REG[DX], -1, 4);
 
                 i = 0;
                 while (memoria->RAM[direccion + i] != '\0')
