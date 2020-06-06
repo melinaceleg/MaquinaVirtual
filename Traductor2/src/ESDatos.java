@@ -24,34 +24,35 @@ public class ESDatos implements constantesDePrograma {
 	int cantLineas;
 	Traductor t;
 
-	public ESDatos(String nomArchEntrada, String nomArchSalida) {
+	public ESDatos(String nomArchEntrada, String nomArchSalida, String parametro) {
 		// TODO Auto-generated constructor stub
 		t = Traductor.getInstance();
 		this.nomArch = nomArchEntrada;
 		try {
 			this.primerPasada();
 			this.segundaPasada();
-			if (t.isGeneraIMG())
+			if (t.isGeneraIMG() && parametro == null)
 				generarIMG(nomArchSalida);
 		} catch (Exception e) {
 			System.out.println(e.getMessage() + "error en el archivo");
 		}
 	}
 
-	private void abrirArchivo() throws IOException {
-		this.entrada = new BufferedReader(new FileReader("arch.txt.txt"));
+	private void abrirArchivo(String nomArchEntrada) throws IOException {
+		this.entrada = new BufferedReader(new FileReader(nomArchEntrada));
 	}
 
 	public void primerPasada() throws IOException {
 		String linea = null;
-		this.abrirArchivo();
+		this.abrirArchivo(this.nomArch);
 		try {
 			linea = entrada.readLine();
 			while (linea != null) {
 				linea=linea.trim();
+				linea=linea.toUpperCase();
 				if (t.verificarLineaContar(linea) && !linea.matches(".*\\sEQU\\s.*"))
 				{
-					System.out.println("CUETNA LINEA");
+//					System.out.println("CUETNA LINEA");
 					t.setCantLineas(t.getCantLineas() + 1);
 				}
 				t.guardaRotulos(linea);
@@ -59,7 +60,7 @@ public class ESDatos implements constantesDePrograma {
 					t.leerDirectivas(linea);
 
 				linea = entrada.readLine();
-				System.out.println(linea);
+//				System.out.println(linea);
 
 			}
 			entrada.close();
@@ -75,18 +76,18 @@ public class ESDatos implements constantesDePrograma {
 		String linea;
 		LineaInstruccion l = null;
 		String sep[];
-		String comentario = null;
 		int lineaAct = 0;
-		this.abrirArchivo();
+		this.abrirArchivo(this.nomArch);
 		try {
 			linea = this.entrada.readLine();
-			System.out.println("linea segunda pasada primera:" + linea);
+//			System.out.println("linea segunda pasada primera:" + linea);
 			while (linea != null) {
 				linea = linea.trim();
 				if (!t.verificarLineaContar(linea)) {
 					if (linea.startsWith("//")) /// SOLO COMENTARIO
 					{
-						linea = linea.replace("[//]+", "");
+						linea = linea.replace("[//]+", "");		
+						System.out.println(linea);
 					}
 				} else {
 					t.setLineaOrg(linea);
@@ -94,10 +95,10 @@ public class ESDatos implements constantesDePrograma {
 						sep = linea.split("[//]+");
 						linea = sep[0];
 						linea = linea.trim();
-						comentario = sep[1];
 					}
+					linea = linea.toUpperCase();
 					t.setLinea(linea);
-					System.out.println("linea contada :" + linea);
+//					System.out.println("linea contada :" + linea);
 					l = t.cortarDatos();
 					if (l != null) {
 						lineaAct++;
@@ -111,7 +112,7 @@ public class ESDatos implements constantesDePrograma {
 
 			}
 			this.entrada.close();
-			t.escribirEnMemoriaConstantesDirectas(); ///debe estar a continuacion de generarMemoria
+			t.escribirEnMemoriaConstantesDirectas(); ///debe estar antes de generarMemoria
 			t.generarMemoria(); 
 		   
 
@@ -131,49 +132,39 @@ public class ESDatos implements constantesDePrograma {
 		this.abrirSalida(nomArchSalida);
 		try {
 			for (int i = 0; i < registros.length; i++)
+			{
 				this.salida.writeInt(registros[i].getValor());
-			for (int i = 0; i < registros[PS].getValor(); i++)
+			System.out.println(registros[i].getNombre()+" :"+registros[i].getValor());
+			}
+			for (int i = 0; i < registros[DS].getValor(); i++)
 				this.salida.writeInt(memoria[i]);
 
 			this.salida.close();
-			generarSalidaLittleEndian();
-			this.leeSalida();
+			//this.leeSalida(nomArchSalida);
+			generarSalidaLittleEndian(nomArchSalida);
+			
 		} catch (IOException e) {
 			System.out.println(e.getMessage() + "Error en salida");
 			e.printStackTrace();
 		}
 
 	}
-//	public void generarIMG(String nomArchSalida) throws FileNotFoundException
-//	{
-//	
-//
-//		this.abrirSalida(nomArchSalida);
-//		try {
-//			this.salida.writeInt(24);
-//			this.salida.close();
-//			leeSalida();
-//		}catch (IOException e) {
-//			System.out.println(e.getMessage()+"Error en salida");
-//			e.printStackTrace();
-//		}
-//	}
 
-	public void leeSalida() throws IOException {
+	public void leeSalida(String nomArchSalida) throws IOException {
 		int[] array = new int[16];
-		DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream("salida.img")));
+		DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream(nomArchSalida)));
 		for (int i = 0; i < 16; i++) {
 			array[i] = input.readInt();
 		}
 		for (int i = 0; i < 16; i++)
-			System.out.println(array[i]);
+		///	System.out.println(array[i]);
 		// String.format("%08X", array[i])
 		input.close();
 	
 	}
 
-	public void generarSalidaLittleEndian() {
-		try (FileChannel fc = (FileChannel) Files.newByteChannel(Paths.get("salida.img"), StandardOpenOption.READ)) {
+	public void generarSalidaLittleEndian(String nomArchSalida) {
+		try (FileChannel fc = (FileChannel) Files.newByteChannel(Paths.get(nomArchSalida), StandardOpenOption.READ)) {
 			ByteBuffer byteBuffer = ByteBuffer.allocate((int) fc.size());
 			byteBuffer.order(ByteOrder.BIG_ENDIAN);
 			 fc.read(byteBuffer);
@@ -186,7 +177,8 @@ public class ESDatos implements constantesDePrograma {
 			IntBuffer intOutputBuffer = byteBuffer.asIntBuffer();
 			intOutputBuffer.put(intArray);
 			fc.close();
-			FileChannel out = new FileOutputStream("salida2.img").getChannel();
+			@SuppressWarnings("resource")
+			FileChannel out = new FileOutputStream("nomArchSalida").getChannel();
 			out.write(byteBuffer);
 			out.close();
 		} catch (IOException e) {
