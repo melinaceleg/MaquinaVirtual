@@ -18,24 +18,24 @@
 // se accede con letra y numero ej: B6
 // 
 // La matriz se guarda como un vector de filas   
-// c·lculo de la celda: B6
+// c√°lculo de la celda: B6
 // '6' - '0' = 6 ; 6 * Columnas = 60
-// 'B' - 'A' = 1 ; 1 + 60 = 61 << [61+tablero] est· el valor 
+// 'B' - 'A' = 1 ; 1 + 60 = 61 << [61+tablero] est√° el valor 
 
 title       equ     "  BUSCAMINAS  "
 msgremain   equ     "Faltan descubrir: "
 UNPICK      equ     '.' //(CONSTANTE) Simbolo para representar minas
-EMPTY       equ     ' ' //(CONSTANTE) Simbolo para un espacio vacÌo
+EMPTY       equ     ' ' //(CONSTANTE) Simbolo para un espacio vac√≠o
 MINE        equ     '*' //(CONSTANTE) Simbolo para representar una mina
 MINES       equ     20  //(CONSTANTE) Cantidad de minas en el tablero 
 COLUMNAS    equ     15  //(CONSTANTE) Cantidad de columans del tablero (max 26)
 FILAS       equ     15  //(CONSTANTE) Cantidad de filas del tablero (max 26)
 tablero     equ     0   //(DIR DE MEMORIA) Matriz de FILASxCOLUMNAS donde se encuentra el tablero 
-visible     equ     700 //(DIR DE MEMORIA) RepresentaciÛn del tablero por pantalla 
+visible     equ     700 //(DIR DE MEMORIA) Representaci√≥n del tablero por pantalla 
 remain      equ     1400 //(DIR DE MEMORIA) Cantidad de celdas que falta "destapar" (y no tengan minas)
 buffer      equ     1401 //(DIR DE MEMORIA) auxiliar para caracteres para imprimir
-true        equ     -1  //RepresentaciÛn del verdadero
-false       equ     0   //RepresentaciÛn del falso 
+true        equ     -1  //Representaci√≥n del verdadero
+false       equ     0   //Representaci√≥n del falso 
 //--------------------------------------------------------------------------------------------
 // COMENZAMOS...
 //--------------------------------------------------------------------------------------------
@@ -44,11 +44,11 @@ false       equ     0   //RepresentaciÛn del falso
             add     sp, 1
 
             push    tablero
-            call    INITAB          //Inicializa la Matriz del tablero (donde est· la informaciÛn oculta)
+            call    INITAB          //Inicializa la Matriz del tablero (donde est√° la informaci√≥n oculta)
             add     sp, 1               
 
             push    tablero 
-            call    CALCMINES       //Pone los n˙meros con la cantidad de MINEs al rededor en cada celda
+            call    CALCMINES       //Pone los n√∫meros con la cantidad de MINEs al rededor en cada celda
             add     sp, 1
 
             //push    tablero           //Para previsualizar el tablero (si se quita el comentario es hacer trampa)
@@ -58,8 +58,8 @@ false       equ     0   //RepresentaciÛn del falso
         
             //en remain guarda la cantidad de celdas que le faltan destapar
             //para para mostrar al usuario 
-            //ac· se establece un valor inicial que es:
-            //el tamÒo de la matriz menos la cantidad de minas
+            //ac√° se establece un valor inicial que es:
+            //el tam√±o de la matriz menos la cantidad de minas
             mov     [remain], FILAS     
             mul     [remain], COLUMNAS
             sub     [remain], MINES
@@ -90,19 +90,19 @@ sigmov:     call    PRINTBAR
             mov     ax, %1001
             sys     2
 
-            call    leemov          //setea en CX y FX la columna y fila que seleccionÛ el usuario 
+            call    leemov          //setea en CX y FX la columna y fila que seleccion√≥ el usuario 
 
             push    visible
             push    fx
             push    cx
             push    tablero
             call    PICKUP          //destapa la celda (copia tablero[c,f] -> visible[c,f] y si es EMPTY se llama recursivamente) 
-            add     sp, 4           //devuelve en AX true si encontrÛ una MINE 
+            add     sp, 4           //devuelve en AX true si encontr√≥ una MINE 
 
             cmp     ax, true               
-            jz      loser           //si explotÛ perdiÛ
-                                    //si no explotÛ:
-            push    UNPICK          //UNPICK es el sÌmbolo usado para representar las celdas no destapadas 
+            jz      loser           //si explot√≥ perdi√≥
+                                    //si no explot√≥:
+            push    UNPICK          //UNPICK es el s√≠mbolo usado para representar las celdas no destapadas 
             push    visible         //Matriz visible 
             call    MCOUNT          //cuenta la cantidad de celdas que falta destapar... 
             add     sp, 2
@@ -110,13 +110,13 @@ sigmov:     call    PRINTBAR
             sub     ax, MINES       //... y le resta la cantidad de MINEs y de este modo sabe cuantas faltan
             mov     [remain], ax
             
-            cmp     ax, 0           //Si no le falta ninguna es porque ya ganÛ !! 
+            cmp     ax, 0           //Si no le falta ninguna es porque ya gan√≥ !! 
             jz      winner
-            jn      winner          //(por las dudas, cap·s se pasÛ)
+            jn      winner          //(por las dudas, cap√°s se pas√≥)
 
-            jmp     sigmov          //Si aun le quedan tendr· que seguir jugando
+            jmp     sigmov          //Si aun le quedan tendr√° que seguir jugando
 
-/// Si perdiÛ
+/// Si perdi√≥
 lost        equ     "  PERDISTE :( "
 loser:      push    visible
             push    tablero
@@ -196,9 +196,9 @@ MCOUNTend:      pop     cx
 //--------------------------------------------------------------------------------------------
 // PICKUP
 //--------------------------------------------------------------------------------------------
-// destapa una celda, si est· vacÌa destapa las circundantes. 
-// Par·metros: (1) matriz tablero (2) columna (3) fila (4) matriz visible
-// Devuelve: AX = false si est· ok o true si perdiÛ 
+// destapa una celda, si est√° vac√≠a destapa las circundantes. 
+// Par√°metros: (1) matriz tablero (2) columna (3) fila (4) matriz visible
+// Devuelve: AX = false si est√° ok o true si perdi√≥ 
 //--------------------------------------------------------------------------------------------
 PICKUP:     push    bp
             mov     bp, sp
@@ -208,9 +208,9 @@ PICKUP:     push    bp
 
             mov     cx, [BP+3]
             mov     fx, [BP+4]
-            mov     ac, false    //est· todo bien hasta que se demuestre lo contrario
+            mov     ac, false    //est√° todo bien hasta que se demuestre lo contrario
 
-            // si est· fuera de rango: salida silenciosa (no hace nada)
+            // si est√° fuera de rango: salida silenciosa (no hace nada)
             cmp     cx, 0 
             jn      pickupfin 
             cmp     cx, COLUMNAS
@@ -239,17 +239,17 @@ PICKUP:     push    bp
             add     sp, 3
 
             cmp     ax, MINE  
-            jz      PICKUPbomb      // si encuentra una MINE perdiÛ 
+            jz      PICKUPbomb      // si encuentra una MINE perdi√≥ 
 
             push    ax 
             push    fx
             push    cx
             push    [BP+5]
-            call    MSET            // setea la matriz visible con lo que encontrÛ 
+            call    MSET            // setea la matriz visible con lo que encontr√≥ 
             add     sp, 4       
 
             cmp     ax, EMPTY 
-            jnz     pickupfin       // si encontrÛ un EMPTY debe destapar los circundantes, sino se va            
+            jnz     pickupfin       // si encontr√≥ un EMPTY debe destapar los circundantes, sino se va            
             
             push    [BP+5]
             push    fx
@@ -410,7 +410,7 @@ leecol:     mov     dx, msgcol
             
             mov     [BP-1], [DS:buffer]
             or      [BP-1], ' ' //paso a minuscula
-            sub     [BP-1], 'a' //paso a n˙mero 
+            sub     [BP-1], 'a' //paso a n√∫mero 
             cmp     [BP-1], 0
             jn      leeerror
             cmp     [BP-1], columnas 
@@ -464,8 +464,8 @@ leemovfin:  pop     dx
 //--------------------------------------------------------------------------------------------
 // CALCMINES
 //--------------------------------------------------------------------------------------------
-// Recorrer cada posiciÛn de tablero 
-// si no tiene MINE debe poner el n˙mero de la suma 
+// Recorrer cada posici√≥n de tablero 
+// si no tiene MINE debe poner el n√∫mero de la suma 
 // de los MINE de alrededor. 
 // Paramtros: (1) posicion del tablero 
 //--------------------------------------------------------------------------------------------
@@ -485,7 +485,7 @@ CALCMINEScol:       add     cx, 1
                     cmp     cx, COLUMNAS
                     jz      CALCMINESfil
 
-                    push    fx              // Obtiene lo que hay en esa posiciÛn 
+                    push    fx              // Obtiene lo que hay en esa posici√≥n 
                     push    cx
                     push    [BP+2]
                     call    MGET
@@ -505,7 +505,7 @@ CALCMINEScol:       add     cx, 1
                     add     ax, '0'         // pasa a caracter
                     jmp     CALCMINESset        
 CALCMINESempty:     mov     ax, EMPTY       // Si no hay minas al rededor pone un EMPTY 
-CALCMINESset:       push    ax              // Setea en la posiciÛn actual el caracter con la cantidad de minas
+CALCMINESset:       push    ax              // Setea en la posici√≥n actual el caracter con la cantidad de minas
                     push    fx
                     push    cx
                     push    [BP+2]
@@ -581,11 +581,11 @@ COUNTARROUNDend:    mov     ax, ac
 //--------------------------------------------------------------------------------------------
 // HASMINE
 //--------------------------------------------------------------------------------------------
-// Dada una posiciÛn (col,fil) de una matriz
+// Dada una posici√≥n (col,fil) de una matriz
 // en AX: 
 // devuelve 1 si tiene MINE 
 // devuelve 0 si no tiene MINE 
-// devuelve 0 si est· fuera de rango
+// devuelve 0 si est√° fuera de rango
 // Parametros: (1) ^Matriz, (2) Columna, (3) Fila 
 //--------------------------------------------------------------------------------------------
 HASMINE:    push    bp
@@ -598,13 +598,13 @@ HASMINE:    push    bp
             mov     fx, [BP+4]
             mov     cx, [BP+3]
             
-            cmp     cx, 0      // si la columna est· fuera de rango <0 o >9 se va 
+            cmp     cx, 0      // si la columna est√° fuera de rango <0 o >9 se va 
             jn      HASMINEend
             cmp     cx, COLUMNAS
             jz      HASMINEend
             jp      HASMINEend 
             
-            cmp     fx, 0      // si la fila  est· fuera de rango <0 o >9 se va 
+            cmp     fx, 0      // si la fila  est√° fuera de rango <0 o >9 se va 
             jn      HASMINEend
             cmp     fx, FILAS 
             jz      HASMINEend
@@ -758,7 +758,7 @@ PRINTLN:    push    ax
 //--------------------------------------------------------------------------------------------
 // PRINTBAR
 //--------------------------------------------------------------------------------------------
-// Imprime un aline seg˙n la cantidad de columnas 
+// Imprime un aline seg√∫n la cantidad de columnas 
 // que tenga el tablero 
 //--------------------------------------------------------------------------------------------
 BARSIMB         equ     '_'
@@ -792,7 +792,7 @@ PRINTBARsig:    mov     [dx], BARSIMB   //asume que va a ser mas de 1
 //--------------------------------------------------------------------------------------------
 // SHOWMINES
 //--------------------------------------------------------------------------------------------
-// Agrega al vector visible la ubicaciÛn de las minas
+// Agrega al vector visible la ubicaci√≥n de las minas
 // Parametros: (1) ^Matriz Tablero (2) ^Matriz Visible
 //--------------------------------------------------------------------------------------------
 SHOWMINES:      push    bp
@@ -837,7 +837,7 @@ SHOWMINESend:   pop     fx
 //--------------------------------------------------------------------------------------------
 // INITAB
 //--------------------------------------------------------------------------------------------
-// Inicializa en forma aletoria la ubicaciÛn de las minas en el tablero 
+// Inicializa en forma aletoria la ubicaci√≥n de las minas en el tablero 
 // Parametros: (1) ^Matriz Tablero 
 //--------------------------------------------------------------------------------------------
 INITAB:         push    bp
@@ -859,15 +859,15 @@ INITABempty:    cmp     bx, cx
 
 INITABmine:     mov     ax, MINES   //Ahora en ax pone la cantidad de MINEs 
                 sub     cx, [BP+2] 
-                sub     cx, 1       //Ahora en cx queda el n˙mero max de celdas
+                sub     cx, 1       //Ahora en cx queda el n√∫mero max de celdas
 
 INITABadd:      cmp     ax, 0       //Cuando ax llegue a 0, termino de ubicar las MINEs  
                 jz      INITABend
-                rnd     bx, cx      //sortea la ubicaciÛn de un MINE
+                rnd     bx, cx      //sortea la ubicaci√≥n de un MINE
                 add     bx, [bp+2]  //le agrega la base del vector 
-                cmp     [bx], MINE  //se fija que no haya ya un MINE en ese ubicaciÛn 
+                cmp     [bx], MINE  //se fija que no haya ya un MINE en ese ubicaci√≥n 
                 jz      INITABadd   //si hay, vuelve a sortear sin decrementar
-                mov     [bx], MINE  //si no hay ubica la MINE en la posiciÛn  
+                mov     [bx], MINE  //si no hay ubica la MINE en la posici√≥n  
                 sub     ax, 1       //decrementa la cantidad de MINEs...     
                 jmp     INITABadd   //...y vuelve 
 
