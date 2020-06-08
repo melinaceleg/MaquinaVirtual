@@ -154,10 +154,10 @@ public class ESDatos implements constantesDePrograma {
 		int[] array = new int[16];
 		DataInputStream input = new DataInputStream(new BufferedInputStream(new FileInputStream(nomArchSalida)));
 		for (int i = 0; i < 16; i++) {
-			array[i] = input.readInt();
+		//	array[i] = input.readInt();
 		}
 		for (int i = 0; i < 16; i++)
-		///	System.out.println(array[i]);
+		//	System.out.println(array[i]);
 		// String.format("%08X", array[i])
 		input.close();
 	
@@ -178,7 +178,7 @@ public class ESDatos implements constantesDePrograma {
 			intOutputBuffer.put(intArray);
 			fc.close();
 			@SuppressWarnings("resource")
-			FileChannel out = new FileOutputStream("nomArchSalida").getChannel();
+			FileChannel out = new FileOutputStream(nomArchSalida).getChannel();
 			out.write(byteBuffer);
 			out.close();
 		} catch (IOException e) {

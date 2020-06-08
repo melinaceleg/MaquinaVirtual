@@ -561,13 +561,17 @@ public class Traductor implements constantesDePrograma {
 						//this.cantLineas++;
 
 			   }		
-		if (!repConstante && op1 != null) {			
+		if (!repConstante && op1 != null) {		
 			operando1 = obtenerCODOP(op1);
+			//System.out.println("Aqui");
+			if (op1.matches(".*\\bCS\\b.*") && operando1.getTipo() == 3 && indiceMnem != 0x44)				
+				operando2=null;
+			else
+			{			
 			operando2 = obtenerCODOP(op2);
-			if (op1.matches(".*\\bCS\\b.*") && operando1.getTipo() == 3)			
-                operando1=null;
-			
 			}
+		}
+		
 	}
 
 		//System.out.println("STRING OP1:" + op1);
@@ -722,7 +726,7 @@ public class Traductor implements constantesDePrograma {
 		if ((izq > 3 && izq != 5) || (der <= 5 || der == 9)) {
 			valor = false;
 		} else {
-			if (der >= 10 && izq != 2 && izq != 3) {
+			if (der >= 10 && izq != 2 && izq != 3 && izq != 1) {
 				valor = false;
 			} else if ((der == 6 || der == 7) && izq != 5) {
 				valor = false;
@@ -735,11 +739,15 @@ public class Traductor implements constantesDePrograma {
 	public int buscaCoincidenteBase(int indiceReg) {
 		int i = 1;
 		int indexBASE = -1;
+		if (indiceReg >= 10)
+			indexBASE=2;
+		else
+		{
 		while (i < registros.length && indexBASE == -1) {
 			if (debeCoincidir(i, indiceReg))
 				indexBASE = i;
-
 			i++;
+		}
 		}
 		return indexBASE;
 	}
@@ -767,7 +775,7 @@ public class Traductor implements constantesDePrograma {
 //			dato = op.substring(0, op.indexOf(":"));
 			registroIZQ = esRegistro(registros[0]);
 			op = registros[1];
-//			System.out.println("en operando d/i registroIZQ:"+registroIZQ+ "op:"+op);
+//			System.out.println("en operando d/i registroIZQ:"+this.getRegistros()[registroIZQ].getNombre()+ "op:"+op);
 		} else
 			registroIZQ = -2; /// aviso que no hay registro base definido
 
