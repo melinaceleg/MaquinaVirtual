@@ -1,0 +1,42 @@
+			HEAP equ 1000 //dentro se almacena la celda libre
+			OTRA_PAL equ 20
+			VECTOR equ 1200
+			NULL equ -1
+			
+main:		mov [HEAP], 1001
+			mov ex,vector
+			mov ax, %0000
+			mov bx, 2
+			
+iteracion:	mov dx,[HEAP]
+			sys 10		
+			cmp [dx],0
+			jz fin
+			mov [ex],dx //posiciones donde estan las palabras
+			add [HEAP],OTRA_PAL
+			add ex,1
+			jmp iteracion
+		
+fin:		mov [ex],NULL
+			mov dx,VECTOR
+for:		cmp [dx+1],NULL
+			jz fin2
+			mov bx, [DS:dx]
+			mov cx, [DS:dx+1]
+			scmp [bx],[cx]
+			jnp sigue
+			swap [DS:dx],[DS:dx+1]
+sigue:		add dx,1
+			jmp for
+			
+fin2:		mov ax, %0000
+			mov bx,2
+			mov ac,VECTOR
+for2:		cmp [ac],NULL
+			jz st
+			mov dx,[ac]			
+			sys 20
+			add ac,1
+			jmp for2
+			
+st:			stop

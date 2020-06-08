@@ -109,7 +109,7 @@ void MostrarDireccion(int base, int numero, int espacio, int cantDigitos);
 
 void MostrarArgumento(int primerArgumento, int tOper, int oper);
 int MnemonicoCantArgumentos(int codMnemonico);
-void CargarStringMnemonicos(char *StringMmemonicos[]);
+char* CargarStringMnemonicos(int mnemonico);
 void MostrarCodigoAssembler(TMemoria memoria, int marcar);
 void MostrarErrores(int error);
 
@@ -306,6 +306,7 @@ int CargarImagenes(TMemoria *memoria, TEntrada entrada)
     while (i < cantImagenes && error == 0)
     {
         CargarImagen(&memoriaAuxiliar, entrada.direccionesImagenes[i]);
+        //MostrarCodigoAssembler(memoriaAuxiliar, 0);
         error = PasarAMemoria(memoria, memoriaAuxiliar, cantImagenes, i);
 
         i++;
@@ -510,10 +511,7 @@ int MnemonicoCantArgumentos(int codMnemonico)
 }
 void MostrarCodigoAssembler(TMemoria memoria, int marcar)
 {
-    char *StringMnemonicos[256];
     int i = memoria.REG[CS], codInstruccion, oper1, oper2, codMnemonico, cantArgumentos;
-
-    CargarStringMnemonicos(StringMnemonicos);
 
     printf("Codigo:\n");
 
@@ -544,7 +542,7 @@ void MostrarCodigoAssembler(TMemoria memoria, int marcar)
 
         printf("\t%3d: ", getLinea(i - memoria.REG[CS]));
 
-        printf("\t%s ", StringMnemonicos[codMnemonico]);
+        printf("\t%s ", CargarStringMnemonicos(codMnemonico));
 
         cantArgumentos = MnemonicoCantArgumentos(codMnemonico);
 
@@ -712,45 +710,49 @@ char *getNombreDelRegistro(int i)
 }
 //----------------------------------------------------------------
 //CARGA LOS STRINGS DE LOS MNEMONICOS PARA MOSTRARLOS POR PANTALLA
-void CargarStringMnemonicos(char *StringMmemonicos[])
+char* CargarStringMnemonicos(int mnemonico)
 {
-    StringMmemonicos[0x1]  = "MOV ";
-    StringMmemonicos[0x2]  = "ADD ";
-    StringMmemonicos[0x3]  = "SUB ";
-    StringMmemonicos[0x4]  = "MUL ";
-    StringMmemonicos[0x5]  = "DIV ";
-    StringMmemonicos[0x6]  = "MOD ";
-    StringMmemonicos[0x13] = "CMP ";
-    StringMmemonicos[0x17] = "SWAP";
-    StringMmemonicos[0x19] = "RND ";
-    StringMmemonicos[0x31] = "AND ";
-    StringMmemonicos[0x32] = "OR  ";
-    StringMmemonicos[0x33] = "NOT ";
-    StringMmemonicos[0x34] = "XOR ";
-    StringMmemonicos[0x37] = "SHL ";
-    StringMmemonicos[0x38] = "SHR ";
-    StringMmemonicos[0x20] = "JMP ";
-    StringMmemonicos[0x21] = "JE  ";
-    StringMmemonicos[0x22] = "JG  ";
-    StringMmemonicos[0x23] = "JL  ";
-    StringMmemonicos[0x24] = "JZ  ";
-    StringMmemonicos[0x25] = "JP  ";
-    StringMmemonicos[0x26] = "JN  ";
-    StringMmemonicos[0x27] = "JNZ ";
-    StringMmemonicos[0x28] = "JNP ";
-    StringMmemonicos[0x29] = "JNN ";
+    switch (mnemonico)
+    {
+        case 0x1:  return "MOV ";
+        case 0x2:  return "ADD ";
+        case 0x3:  return "SUB ";
+        case 0x4:  return "MUL ";
+        case 0x5:  return "DIV ";
+        case 0x6:  return "MOD ";
+        case 0x13: return "CMP ";
+        case 0x17: return "SWAP";
+        case 0x19: return "RND ";
+        case 0x31: return "AND ";
+        case 0x32: return "OR  ";
+        case 0x33: return "NOT ";
+        case 0x34: return "XOR ";
+        case 0x37: return "SHL ";
+        case 0x38: return "SHR ";
+        case 0x20: return "JMP ";
+        case 0x21: return "JE  ";
+        case 0x22: return "JG  ";
+        case 0x23: return "JL  ";
+        case 0x24: return "JZ  ";
+        case 0x25: return "JP  ";
+        case 0x26: return "JN  ";
+        case 0x27: return "JNZ ";
+        case 0x28: return "JNP ";
+        case 0x29: return "JNN ";
 
-    StringMmemonicos[0x40] = "CALL";
-    StringMmemonicos[0x44] = "PUSH";
-    StringMmemonicos[0x45] = "POP ";
-    StringMmemonicos[0x48] = "RET ";
+        case 0x40: return "CALL";
+        case 0x44: return "PUSH";
+        case 0x45: return "POP ";
+        case 0x48: return "RET ";
 
-    StringMmemonicos[0x50] = "SLEN";
-    StringMmemonicos[0x51] = "SMOV";
-    StringMmemonicos[0x53] = "SCMP";
+        case 0x50: return "SLEN";
+        case 0x51: return "SMOV";
+        case 0x53: return "SCMP";
 
-    StringMmemonicos[0x81] = "SYS ";
-    StringMmemonicos[0x8f] = "STOP";
+        case 0x81: return "SYS ";
+        case 0x8f: return "STOP";
+    }
+    return "NONE";
 }
 //CARGA EL VECTOR DE FUNCIONES
 void CargarMnemonicos(T_FUNC *mnemonicos)
@@ -1048,10 +1050,9 @@ int func_CALL(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 }
 int func_RET(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
-    int error = func_POP(memoria, flags, arg1 , arg2);
-    (*arg1)+=3;
+    int aux, error = func_POP(memoria, flags, &aux , arg2);
     if (error == 0)
-        setIP(memoria, (*arg1));
+        setIP(memoria, aux+3);
 
     return error;
 }
@@ -1265,7 +1266,7 @@ int func_SYS(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 }
 int func_STOP(TMemoria *memoria, TFlags flags, int *arg1, int *arg2)
 {
-    setIP(memoria, memoria->REG[DS]);
+    setIP(memoria, memoria->REG[DS] - memoria->REG[CS]);
 
     return 0;
 }

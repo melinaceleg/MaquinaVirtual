@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters="9.img -a -b" />
+				<Option parameters="buscaminas.img -a -b -d" />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
